@@ -50,6 +50,24 @@ services:
         - db-lost
         - rabbitmqlost
 
+    lost-custom:
+      image: l3pcv/lost-cv:${LOST_VERSION}
+      container_name: lost-custom
+      command: bash /entrypoint.sh
+      env_file:
+        - .env
+      volumes:
+        - ${LOST_DATA}:/home/lost
+      restart: always
+      environment:
+          PYTHONPATH: "/code/backend"
+          ENV_NAME: "lost-custom"
+          WORKER_NAME: "lost-custom-0"
+          PY3_INIT: "source /opt/conda/bin/activate lost-cv"
+      links:
+        - db-lost
+        - rabbitmqlost
+
     rabbitmqlost:
       image: rabbitmq:3-management
       container_name: rabbitmqlost
