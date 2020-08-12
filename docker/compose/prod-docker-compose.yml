@@ -1,14 +1,21 @@
-version: '2'
+version: '2.3'
+
+x-worker:
+    command: bash /entrypoint.sh
+    env_file:
+      - .env
+    volumes:
+      - ${LOST_DATA}:/home/lost
+    restart: always
+    links:
+      - db-lost
+      - rabbitmqlost
+
 services:
     lost:
+      <<: *worker
       image: l3pcv/lost:${LOST_VERSION}
       container_name: lost
-      command: bash /entrypoint.sh
-      env_file:
-        - .env
-      volumes:
-        - ${LOST_DATA}:/home/lost
-      restart: always
       ports:
         - "${LOST_FRONTEND_PORT}:8080"
       environment:
@@ -16,49 +23,40 @@ services:
         ENV_NAME: "lost"
         WORKER_NAME: "lost-0"
         PY3_INIT: "source /opt/conda/bin/activate lost"
-      links:
-        - db-lost
-        - rabbitmqlost
 
     db-lost:
       image: mysql:5.7
       container_name: db-lost
       volumes:
-        - ${LOST_DATA}/mysql:/var/lib/mysql
+          - ${LOST_DATA}/mysql:/var/lib/mysql
       restart: always
       environment:
-        MYSQL_DATABASE: ${LOST_DB_NAME}
-        MYSQL_USER: ${LOST_DB_USER}
-        MYSQL_PASSWORD: ${LOST_DB_PASSWORD}
-        MYSQL_ROOT_PASSWORD: ${LOST_DB_ROOT_PASSWORD}
+          MYSQL_DATABASE: ${LOST_DB_NAME}
+          MYSQL_USER: ${LOST_DB_USER}
+          MYSQL_PASSWORD: ${LOST_DB_PASSWORD}
+          MYSQL_ROOT_PASSWORD: ${LOST_DB_ROOT_PASSWORD}
+
+    rabbitmqlost:
+      image: rabbitmq:3-management
+      container_name: rabbitmqlost
+      restart: always
+      volumes:
+          - ${LOST_DATA}/rabbitmq:/var/lib/rabbitmq
 
     lost-cv:
+      <<: *worker
       image: l3pcv/lost-cv:${LOST_VERSION}
       container_name: lost-cv
-      command: bash /entrypoint.sh
-      env_file:
-        - .env
-      volumes:
-        - ${LOST_DATA}:/home/lost
       restart: always
       environment:
           PYTHONPATH: "/code/backend"
           ENV_NAME: "lost-cv"
           WORKER_NAME: "lost-cv-0"
           PY3_INIT: "source /opt/conda/bin/activate lost-cv"
-      links:
-        - db-lost
-        - rabbitmqlost
 
     lost-custom:
-      image: l3pcv/lost-cv:${LOST_VERSION}
+      image: lost-custom:0.01
       container_name: lost-custom
-      command: bash /entrypoint.sh
-      env_file:
-        - .env
-      volumes:
-        - ${LOST_DATA}:/home/lost
-      restart: always
       environment:
           PYTHONPATH: "/code/backend"
           ENV_NAME: "lost-custom"
@@ -67,10 +65,3 @@ services:
       links:
         - db-lost
         - rabbitmqlost
-
-    rabbitmqlost:
-      image: rabbitmq:3-management
-      container_name: rabbitmqlost
-      restart: always
-      volumes:
-        - ${LOST_DATA}/rabbitmq:/var/lib/rabbitmq

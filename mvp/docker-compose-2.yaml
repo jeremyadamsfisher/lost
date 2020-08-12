@@ -13,7 +13,7 @@ x-worker:
 
 services:
     lost:
-      <<: *worker
+      <<: *workers
       image: l3pcv/lost:${LOST_VERSION}
       container_name: lost
       ports:
@@ -53,15 +53,3 @@ services:
           ENV_NAME: "lost-cv"
           WORKER_NAME: "lost-cv-0"
           PY3_INIT: "source /opt/conda/bin/activate lost-cv"
-
-    lost-custom:
-      image: lost-custom:0.01
-      container_name: lost-custom
-      environment:
-          PYTHONPATH: "/code/backend"
-          ENV_NAME: "lost-custom"
-          WORKER_NAME: "lost-custom-0"
-          PY3_INIT: "source /opt/conda/bin/activate lost-cv"
-      links:
-        - db-lost
-        - rabbitmqlost
